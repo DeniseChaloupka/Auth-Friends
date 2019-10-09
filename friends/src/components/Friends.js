@@ -1,66 +1,57 @@
-import React, { Component } from 'react';
-import './App.css';
-import logo from './logo.svg';
-import SelectedFriend from './SelectedFriend';
-import { connect } from 'react-redux';
-import { deleteFriend, updateSingleFriend, toggleShowUpdate } from '../actions';
-import UpdateFriendForm from './UpdateFriendForm';
+import React, { useState, useEffect } from "react";
+import { axiosWithAuth } from "../utils/axiosWithAuth";
 
-class Friends extends Component {
-  handleDeleteFriend = () => {
-    const { id } = this.props.friendSelected;
-    this.props.deleteFriend(id);
-  };
+const Friends = () => {
 
-  handleShowFriend = friend => {
-    this.props.updateSingleFriend(friend);
-  };
+    const [friends, setFriends] = useState({friends: []});
+    const [newFriend, setNewFriend ] = useState({id: "", name: "", age: "", email: ""})
 
-  toggleShowUpdate = () => {
-    this.props.toggleShowUpdate();
-  };
-  render() {
+    useEffect(() => {
+        getFriends();
+    }, [])
+            
+
+    const handleSubmit = e => {
+        e.preventDefault();
+        axiosWithAuth().post("/friends", newFriend)
+            .then(res => {
+
+                getFriends();
+            }
+            )
+            .catch(res => console.log(res))
+
+    }
+
+    const getFriends = () => {
+    
+        axiosWithAuth().get("/friends")
+            .then(res => setFriends({friends: res.data}))
+            .catch(err => console.log(err));
+
+    }
+
+    const handleChange = e => {
+        setNewFriend({...newFriend, [e.target.name]: e.target.value});
+
+
+
+    }
+
+
+
     return (
-      <div className="Friend-Container">
-        <ul className="Friend-List">
-          {this.props.friends.map(friend => {
-            return (
-              <li onClick={() => this.handleShowFriend(friend)} key={friend.id}>
-                {friend.name}
-              </li>
-            );
-          })}
-        </ul>
-        {Object.keys(this.props.friendSelected).length > 0 ? (
-          <SelectedFriend
-            handleShowFriend={this.handleShowFriend}
-            toggleShowUpdate={this.toggleShowUpdate}
-            handleDeleteFriend={this.handleDeleteFriend}
-            selected={this.props.friendSelected}
-          />
-        ) : null}
-        {this.props.showUpdate ? (
-          <UpdateFriendForm friend={this.props.friendSelected} />
-        ) : null}
-        {this.props.deletingFriend ? (
-          <img src={logo} className="App-logo" alt="logo" />
-        ) : null}
-      </div>
-    );
-  }
+        <>
+        <h3>Yay!!! Friends page!!!</h3>
+        <form onSubmit={handleSubmit}>
+            <input type="text" name="name" placeholder="name" value={newFriend.name} onChange={handleChange}/>
+            <input type="text" name="age" placeholder="age" value={newFriend.age} onChange={handleChange}/>
+            <input type="text" name="email" placeholder="email" value={newFriend.email} onChange={handleChange}/>
+            <button>addFriend</button>
+        </form>
+        {friends.friends.map(friend =><h1 key={friend.id}>{friend.name}</h1>)}  
+        </>
+    )
 }
 
-const mapStateToProps = state => {
-  return {
-    deletingFriend: state.friendsReducer.deletingFriend,
-    error: state.friendsReducer.error,
-    showUpdate: state.singleFriendReducer.showUpdate,
-    friendSelected: state.singleFriendReducer.friendSelected
-  };
-};
-
-export default connect(mapStateToProps, {
-  deleteFriend,
-  updateSingleFriend,
-  toggleShowUpdate
-})(Friends);
+export default Friends;
